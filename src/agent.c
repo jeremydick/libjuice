@@ -732,8 +732,12 @@ int agent_input(juice_agent_t *agent, char *buf, size_t len, const addr_record_t
 	switch (entry->type) {
 	case AGENT_STUN_ENTRY_TYPE_CHECK:
 		JLOG_DEBUG("Received application datagram");
-		if (agent->config.cb_recv)
-			agent->config.cb_recv(agent, buf, len, agent->config.user_ptr);
+		if (agent->config.cb_recv) {
+			juice_cb_recv_t cb_recv = agent->config.cb_recv;
+			mutex_unlock(&agent->mutex);
+			cb_recv(agent, buf, len, agent->config.user_ptr);
+			mutex_lock(&agent->mutex);
+		}
 		return 0;
 
 	case AGENT_STUN_ENTRY_TYPE_RELAY:
